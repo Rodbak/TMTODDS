@@ -2,6 +2,10 @@ import { notFound } from "next/navigation";
 import { SlipBody } from "@/components/demo/SlipBody";
 import { DEMO_SLIPS } from "@/lib/demo/data";
 
+export function generateStaticParams() {
+  return DEMO_SLIPS.map((s) => ({ slug: s.slug }));
+}
+
 export default async function SlipPage({
   params,
 }: {

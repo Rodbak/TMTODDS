@@ -2,6 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DEMO_SLIPS } from "@/lib/demo/data";
 
+export function generateStaticParams() {
+  return DEMO_SLIPS.map((s) => ({ id: s.id }));
+}
+
 export default async function AdminSlipPage({
   params,
 }: {
