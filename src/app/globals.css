@@ -1,26 +1,136 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --tmt-bg-deep: #060a12;
+  --tmt-bg: #0a101c;
+  --tmt-surface: #0f1729;
+  --tmt-surface-2: #141d2e;
+  --tmt-border: rgba(255, 255, 255, 0.08);
+  --tmt-border-strong: rgba(255, 255, 255, 0.12);
+  --tmt-text: #f0f4fc;
+  --tmt-text-muted: rgba(240, 244, 252, 0.62);
+  --tmt-accent: #00e676;
+  --tmt-accent-dim: rgba(0, 230, 118, 0.15);
+  --tmt-blue: #1e88e5;
+  --tmt-blue-dim: rgba(30, 136, 229, 0.12);
+  --background: var(--tmt-bg);
+  --foreground: var(--tmt-text);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: Consolas, "Courier New", monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--tmt-bg-deep);
+  color: var(--tmt-text);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system;
+}
+
+/* Ambient grid — subtle, professional */
+.tmt-grid {
+  background-image: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0.04) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+.tmt-glow {
+  box-shadow:
+    0 0 0 1px var(--tmt-border-strong),
+    0 20px 50px rgba(0, 0, 0, 0.45);
+}
+
+.tmt-panel {
+  background: linear-gradient(165deg, rgba(20, 29, 46, 0.96) 0%, rgba(12, 18, 30, 0.98) 100%);
+  border: 1px solid var(--tmt-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.tmt-panel-strong {
+  background: linear-gradient(165deg, rgba(24, 34, 52, 0.98) 0%, rgba(14, 22, 38, 0.99) 100%);
+  border: 1px solid var(--tmt-border-strong);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+/* Huly-inspired hero band */
+.tmt-hero {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--tmt-border);
+  background:
+    radial-gradient(ellipse 90% 60% at 50% -20%, rgba(30, 136, 229, 0.22), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 85% 40%, rgba(0, 230, 118, 0.08), transparent 50%),
+    linear-gradient(180deg, var(--tmt-bg) 0%, var(--tmt-bg-deep) 100%);
+}
+
+.tmt-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 60%, var(--tmt-bg-deep));
+  pointer-events: none;
+}
+
+/* Marquee — capability strip */
+@keyframes tmt-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.tmt-marquee-mask {
+  mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+}
+
+.tmt-marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 0.75rem;
+  animation: tmt-marquee 45s linear infinite;
+}
+
+.tmt-marquee-track:hover {
+  animation-play-state: paused;
+}
+
+/* 1win-style odds pill */
+.tmt-odds {
+  font-variant-numeric: tabular-nums;
+  min-width: 3.25rem;
+  text-align: center;
+  font-weight: 800;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(180deg, rgba(0, 230, 118, 0.2), rgba(0, 230, 118, 0.08));
+  border: 1px solid rgba(0, 230, 118, 0.35);
+  color: #b9ffd4;
+}
+
+/* Feature card — Huly-like elevated tiles */
+.tmt-feature-card {
+  border-radius: 1rem;
+  border: 1px solid var(--tmt-border);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  padding: 1.25rem 1.35rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.tmt-feature-card:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+  transform: translateY(-2px);
 }

@@ -1,0 +1,184 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum SlipTier {
+  FREE
+  FIXED
+  CONFIRMED
+  CORRECT_SCORE
+}
+
+enum SlipStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum MatchResultStatus {
+  PENDING
+  WON
+  LOST
+  VOID
+}
+
+enum PaymentProvider {
+  PAYSTACK
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  email        String?  @unique
+  phone        String?  @unique
+  passwordHash String
+  role         UserRole @default(USER)
+
+  referralCode String   @unique
+  points       Int      @default(0)
+
+  subscriptions Subscription[]
+  slipsCreated  Slip[]          @relation("SlipCreatedBy")
+  payments      Payment[]
+}
+
+model Plan {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  key          String @unique
+  name         String
+  priceGhs     Int
+  durationDays Int
+
+  includesFixed        Boolean @default(false)
+  includesConfirmed    Boolean @default(false)
+  includesCorrectScore Boolean @default(false)
+
+  subscriptions Subscription[]
+  payments       Payment[]
+}
+
+model Subscription {
+  id        String             @id @default(cuid())
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  userId String
+  planId String
+
+  startsAt DateTime
+  endsAt   DateTime
+  status   SubscriptionStatus @default(ACTIVE)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([userId, status])
+  @@index([endsAt])
+}
+
+model Slip {
+  id        String     @id @default(cuid())
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  title     String
+  slug      String     @unique
+  tier      SlipTier
+  status    SlipStatus @default(DRAFT)
+
+  bodyMd    String
+  publishAt DateTime?
+  expiresAt DateTime?
+
+  createdById String
+  createdBy   User   @relation("SlipCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  matches SlipMatch[]
+
+  @@index([status, publishAt])
+  @@index([tier])
+}
+
+model SlipMatch {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  slipId String
+  slip   Slip @relation(fields: [slipId], references: [id], onDelete: Cascade)
+
+  kickoffAt DateTime?
+  league    String?
+  homeTeam  String
+  awayTeam  String
+
+  market String
+  pick   String
+  odds   Float
+
+  bookmaker     String?
+  bestSiteUrl   String?
+  researchUrls  String? // JSON string of helpful links (SofaScore, Flashscore, etc.)
+  externalFixtureId String?
+
+  resultStatus   MatchResultStatus @default(PENDING)
+  finalHomeScore Int?
+  finalAwayScore Int?
+
+  @@index([slipId])
+  @@index([resultStatus])
+}
+
+model Payment {
+  id        String         @id @default(cuid())
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  provider PaymentProvider
+  status   PaymentStatus   @default(PENDING)
+
+  userId String
+  planId String
+
+  amount   Int
+  currency String @default("GHS")
+  reference String @unique
+
+  rawJson String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([userId, status])
+}
