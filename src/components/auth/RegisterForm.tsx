@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
-import { setDemoSession } from "@/lib/demo/session";
 
 export function RegisterForm() {
   const [pending, startTransition] = useTransition();
@@ -29,16 +28,16 @@ export function RegisterForm() {
             setError("Password must be at least 8 characters");
             return;
           }
-          const userEmail = email.trim() || `${phone.trim() || "guest"}@tmtodds.demo`;
-          setDemoSession({
-            user: {
-              id: `u_${Date.now()}`,
-              email: userEmail.toLowerCase(),
-              role: "USER",
-            },
-            activePlanKey: "fixed_weekly",
-            subscriptionStartedAt: new Date().toISOString(),
+          const res = await fetch("/api/auth/register", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ email, phone, password }),
           });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            setError(data?.error ?? "Registration failed");
+            return;
+          }
           window.location.href = "/account";
         });
       }}
@@ -94,7 +93,7 @@ export function RegisterForm() {
       </Button>
 
       <div className="text-sm text-black/70 dark:text-white/70">
-        Demo mode: this creates a local demo account on this browser only.
+        This creates a real account (stored in the database).
       </div>
 
       <div className="text-sm text-black/70 dark:text-white/70">

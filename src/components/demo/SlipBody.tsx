@@ -6,36 +6,48 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { Button } from "@/components/ui/button";
-import { addSlipToBetslip, getBetslip, type BetslipLine } from "@/lib/demo/betslip";
-import { type DemoSlip } from "@/lib/demo/data";
+import { addSlipToBetslip, getBetslip } from "@/lib/demo/betslip";
 import { formatKickoffLabel } from "@/lib/kickoff";
 import {
   formatOdds,
   getStoredOddsFormat,
   type OddsFormat,
 } from "@/lib/odds-format";
-import { getDemoSession, planByKey } from "@/lib/demo/session";
 import { SLIP_TIER_LABEL } from "@/lib/plans";
 
-export function SlipBody({ slip }: { slip: DemoSlip }) {
-  const [planKey, setPlanKey] = useState<string | null>(null);
-  const [fmt, setFmt] = useState<OddsFormat>("decimal");
+type SlipTier = "FREE" | "FIXED" | "CONFIRMED" | "CORRECT_SCORE";
+type SlipMatch = {
+  id: string;
+  kickoffAt: string | null;
+  league: string | null;
+  homeTeam: string;
+  awayTeam: string;
+  market: string;
+  pick: string;
+  odds: number;
+  bookmaker: string | null;
+  bestSiteUrl: string | null;
+  resultStatus: "PENDING" | "WON" | "LOST" | "VOID";
+  finalHomeScore: number | null;
+  finalAwayScore: number | null;
+};
+
+export type Slip = {
+  id: string;
+  title: string;
+  slug: string;
+  tier: SlipTier;
+  publishAt: string | null;
+  bodyMd: string;
+  matches: SlipMatch[];
+};
+
+export function SlipBody({ slip, allowed }: { slip: Slip; allowed: boolean }) {
+  const [fmt, setFmt] = useState<OddsFormat>(() => getStoredOddsFormat());
   const [now, setNow] = useState(() => new Date());
   const [slipBetTick, setSlipBetTick] = useState(0);
 
   useEffect(() => {
-    const sync = () => setPlanKey(getDemoSession()?.activePlanKey ?? null);
-    sync();
-    window.addEventListener("storage", sync);
-    window.addEventListener("tmt-session", sync);
-    return () => {
-      window.removeEventListener("storage", sync);
-      window.removeEventListener("tmt-session", sync);
-    };
-  }, []);
-
-  useEffect(() => {
-    setFmt(getStoredOddsFormat());
     const onOdds = () => setFmt(getStoredOddsFormat());
     window.addEventListener("tmt-odds-format", onOdds);
     return () => window.removeEventListener("tmt-odds-format", onOdds);
@@ -51,13 +63,6 @@ export function SlipBody({ slip }: { slip: DemoSlip }) {
     window.addEventListener("tmt-betslip", on);
     return () => window.removeEventListener("tmt-betslip", on);
   }, []);
-
-  const plan = planByKey(planKey);
-  const allowed =
-    slip.tier === "FREE" ||
-    (slip.tier === "FIXED" && Boolean(plan?.includesFixed)) ||
-    (slip.tier === "CONFIRMED" && Boolean(plan?.includesConfirmed)) ||
-    (slip.tier === "CORRECT_SCORE" && Boolean(plan?.includesCorrectScore));
 
   const combined =
     slip.matches.length > 0 ? slip.matches.reduce((a, m) => a * m.odds, 1) : 1;
@@ -99,7 +104,7 @@ export function SlipBody({ slip }: { slip: DemoSlip }) {
                 title: slip.title,
                 combinedDecimal: combined,
                 legs: Math.max(1, slip.matches.length),
-                league: slip.matches[0]?.league,
+                league: slip.matches[0]?.league ?? undefined,
               });
               setSlipBetTick((x) => x + 1);
             }}
@@ -163,7 +168,7 @@ export function SlipBody({ slip }: { slip: DemoSlip }) {
                     <div className="text-[11px] font-normal text-white/45">{m.league ?? "—"}</div>
                   </td>
                   <td className="border-b border-white/[0.06] whitespace-nowrap px-3 py-3 text-xs text-white/60 md:px-4">
-                    {formatKickoffLabel(m.kickoffAt, now)}
+                    {formatKickoffLabel(m.kickoffAt ?? undefined, now)}
                   </td>
                   <td className="border-b border-white/[0.06] px-3 py-3 text-white/80 md:px-4">{m.market}</td>
                   <td className="border-b border-white/[0.06] px-3 py-3 font-bold text-[#b9ffd4] md:px-4">{m.pick}</td>

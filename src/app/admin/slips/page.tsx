@@ -1,10 +1,32 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { DEMO_SLIPS } from "@/lib/demo/data";
+import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth/session";
 
 export default function AdminSlipsPage() {
-  const slips = DEMO_SLIPS;
+  return <AdminSlipsPageServer />;
+}
+
+export const dynamic = "force-dynamic";
+
+async function AdminSlipsPageServer() {
+  const admin = await requireAdmin();
+  if (!admin) redirect("/login");
+
+  const slips = await prisma.slip.findMany({
+    orderBy: { createdAt: "desc" },
+    include: { matches: true },
+    take: 200,
+  }) as Array<{
+    id: string;
+    status: string;
+    tier: string;
+    title: string;
+    slug: string;
+    matches: Array<{ id: string }>;
+  }>;
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-12">
@@ -12,7 +34,7 @@ export default function AdminSlipsPage() {
         <div>
           <h1 className="text-2xl font-black tracking-tight text-white">Slips</h1>
           <p className="mt-2 text-sm text-white/70">
-            Demo admin slip list.
+            Create, publish, and update results.
           </p>
         </div>
         <Button as="link" href="/admin/slips/new">
@@ -30,7 +52,7 @@ export default function AdminSlipsPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-xs font-semibold text-white/60">
-                  PUBLISHED • {s.tier}
+                  {s.status} • {s.tier}
                 </div>
                 <div className="mt-1 text-lg font-black text-white">{s.title}</div>
                 <div className="mt-2 text-xs text-white/60">

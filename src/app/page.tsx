@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { DemoModeCallout } from "@/components/demo/DemoModeCallout";
 
 import { Button } from "@/components/ui/button";
 import { SportsbookShell } from "@/components/SportsbookShell";
 import { SLIP_TIER_LABEL } from "@/lib/plans";
 import { DEMO_PLANS, DEMO_SLIPS } from "@/lib/demo/data";
+import { formatKickoffGmtLabel } from "@/lib/kickoff";
 
 const MARQUEE_ITEMS = [
   "Live slip board",
@@ -18,18 +20,18 @@ const MARQUEE_ITEMS = [
 
 const FEATURES = [
   {
-    title: "One workspace for slips",
-    body: "Browse free picks and VIP tiers in a single dense board—similar to how top sportsbooks surface markets.",
+    title: "Daily Slip Board",
+    body: "Browse free and VIP picks across top leagues. Updated every matchday.",
     icon: "grid",
   },
   {
-    title: "Proof you can stand behind",
-    body: "Track wins, losses, and pending legs. Built for transparency when you scale to real settlement APIs.",
+    title: "Verified Proof",
+    body: "Every pick is logged with outcome. Win, lose, or pending — we show it all.",
     icon: "shield",
   },
   {
-    title: "Packages that scale",
-    body: "Weekly and monthly access tiers with clear inclusions: Fixed, Confirmed, and Correct Score vault.",
+    title: "Flexible Packages",
+    body: "Weekly or monthly access. Start free, upgrade when you're ready.",
     icon: "layers",
   },
 ];
@@ -37,7 +39,7 @@ const FEATURES = [
 export default async function Home() {
   const plans = DEMO_PLANS;
   const slips = DEMO_SLIPS.slice(0, 10);
-  const featuredPlanKey = "elite_monthly";
+  const featuredPlanKey = "confirmed_weekly";
 
   const tierCounts = countBy(DEMO_SLIPS.map((s) => s.tier));
   const leagueCounts = countBy(
@@ -49,34 +51,31 @@ export default async function Home() {
 
   return (
     <main className="flex flex-col">
-      <section className="tmt-hero relative">
+      <section className="tmt-hero relative overflow-hidden">
         <div className="relative z-[1] mx-auto max-w-[1280px] px-4 pb-14 pt-12 md:px-5 md:pb-20 md:pt-16">
+          <HeroPlayersBanner />
           <p className="text-center text-[11px] font-bold uppercase tracking-[0.2em] text-white/50">
             Ghana · Football · Premium slip delivery
           </p>
           <h1 className="mx-auto mt-4 max-w-[920px] text-center text-[clamp(2rem,5vw,3.25rem)] font-black leading-[1.08] tracking-tight text-white">
-            Everything you need to run a{" "}
-            <span className="bg-gradient-to-r from-white via-white to-[#7dd3fc] bg-clip-text text-transparent">
-              professional betting slip
-            </span>{" "}
-            operation.
+            Ghana&apos;s #1 Football Betting Slips — Delivered Daily
           </h1>
           <p className="mx-auto mt-5 max-w-[640px] text-center text-base leading-relaxed text-white/65 md:text-lg">
-            TMTODDS combines sportsbook-grade density with a product-style layout inspired by modern SaaS
-            experiences—built for prospects, subscribers, and admins.
+            Fixed matches, confirmed picks, and correct scores — curated for Ghanaian bettors. Free picks daily. VIP
+            tiers for serious players.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Button as="link" href="/slips" variant="primary" size="md">
-              See slips in action
+              See Today&apos;s Slips
             </Button>
             <Button as="link" href="/#packages" variant="secondary" size="md">
-              View VIP packages
+              View VIP Packages
             </Button>
             <Link
               href="/proof"
               className="text-sm font-semibold text-[#7dd3fc] underline-offset-4 hover:underline"
             >
-              Proof & results →
+              Check Proof &amp; Results
             </Link>
           </div>
           <div className="mx-auto mt-12 grid max-w-[720px] grid-cols-2 gap-3 sm:grid-cols-4">
@@ -85,6 +84,18 @@ export default async function Home() {
             <HeroStat value="GHS" label="Local pricing" />
             <HeroStat value="24/7" label="Board access" />
           </div>
+          <p className="mx-auto mt-8 max-w-[640px] px-2 text-center text-[10px] leading-relaxed text-white/38">
+            Hero photos via{" "}
+            <a
+              className="text-[#7dd3fc]/80 underline-offset-2 hover:underline"
+              href="https://commons.wikimedia.org/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Wikimedia Commons
+            </a>{" "}
+            (free licenses).
+          </p>
         </div>
       </section>
 
@@ -106,7 +117,7 @@ export default async function Home() {
       <div className="border-y border-white/[0.08] bg-[#080c14] py-3">
         <div className="tmt-marquee-mask overflow-hidden">
           <div className="tmt-marquee-track">
-            {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((label, i) => (
+            {MARQUEE_ITEMS.map((label, i) => (
               <span
                 key={`${label}-${i}`}
                 className="shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white/70"
@@ -125,7 +136,7 @@ export default async function Home() {
               Unmatched clarity for your audience
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-white/60 md:text-base">
-              Structured like a modern product site, executed with the information density serious bettors expect.
+              Built for Ghanaian bettors who want real picks, real proof, and real value.
             </p>
           </div>
           <div className="mt-10 grid gap-4 md:grid-cols-3">
@@ -190,6 +201,9 @@ export default async function Home() {
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 bg-black/20 px-4 py-3 md:px-5">
                 <span className="text-xs font-black uppercase tracking-wide text-white/80">Fixture</span>
                 <span className="hidden text-xs font-black uppercase tracking-wide text-white/80 sm:inline">
+                  Date / Time
+                </span>
+                <span className="hidden text-xs font-black uppercase tracking-wide text-white/80 sm:inline">
                   Market / pick
                 </span>
                 <span className="text-xs font-black uppercase tracking-wide text-white/80">Tier</span>
@@ -210,6 +224,9 @@ export default async function Home() {
                         <div className="mt-0.5 text-[11px] text-white/45">
                           {m?.league ?? "Slip"} · {s.title}
                         </div>
+                      </div>
+                      <div className="hidden min-w-[160px] text-sm text-white/70 sm:block">
+                        {formatKickoffGmtLabel(m?.kickoffAt)}
                       </div>
                       <div className="hidden min-w-[140px] text-sm text-white/70 sm:block">
                         {m ? (
@@ -254,6 +271,7 @@ export default async function Home() {
               </span>
             </div>
             <div className="mt-5 grid gap-3">
+              <DemoModeCallout />
               <PricingCards plans={plans} featuredKey={featuredPlanKey} />
             </div>
             <p className="mt-4 text-[11px] leading-relaxed text-white/45">
@@ -262,7 +280,62 @@ export default async function Home() {
           </section>
         }
       />
+
+      <section className="border-t border-white/[0.06] bg-[#060a12] py-12">
+        <div className="mx-auto max-w-[1280px] px-4 md:px-5">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-xl font-black tracking-tight text-white md:text-2xl">Why Trust TMTODDS?</h2>
+          </div>
+          <div className="mx-auto mt-6 grid max-w-4xl gap-3 md:grid-cols-3">
+            <TrustCard icon="✅" title="200+ Slips Delivered" body="A steady pipeline of picks across matchdays." />
+            <TrustCard icon="📊" title="Win rate tracked publicly" body="Proof & results ledger stays visible." />
+            <TrustCard icon="🇬🇭" title="Built for Ghana" body="Local pricing, local context, clear UX." />
+          </div>
+        </div>
+      </section>
     </main>
+  );
+}
+
+function HeroPlayersBanner() {
+  return (
+    <div className="relative mb-8 w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] overflow-hidden">
+      <div className="relative h-[240px] md:h-[420px]">
+        <div className="grid h-full grid-cols-2 md:grid-cols-4">
+          <img
+            className="h-full w-full object-cover"
+            src="/assets/images/players/player1.jpg"
+            alt="Football player"
+            loading="eager"
+          />
+          <img
+            className="h-full w-full object-cover"
+            src="/assets/images/players/player2.jpg"
+            alt="Football player"
+            loading="eager"
+          />
+          <img
+            className="hidden h-full w-full object-cover md:block"
+            src="/assets/images/players/player3.jpg"
+            alt="Football player"
+            loading="lazy"
+          />
+          <img
+            className="hidden h-full w-full object-cover md:block"
+            src="/assets/images/players/player4.jpg"
+            alt="Football player"
+            loading="lazy"
+          />
+        </div>
+
+        <div className="absolute inset-0 bg-gradient-to-r from-[rgba(0,0,0,0.55)] to-transparent" />
+
+        <div className="absolute left-5 top-1/2 -translate-y-1/2 md:left-10">
+          <div className="text-4xl font-black tracking-tight text-white md:text-6xl">TMTODDS</div>
+          <div className="mt-2 h-[3px] w-24 bg-[#00c853]" />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -310,6 +383,24 @@ function FeatureIcon({ name }: { name: string }) {
           strokeWidth="2"
         />
       </svg>
+    </div>
+  );
+}
+
+function TrustCard({
+  icon,
+  title,
+  body,
+}: {
+  icon: string;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+      <div className="text-2xl">{icon}</div>
+      <div className="mt-2 text-sm font-black text-white">{title}</div>
+      <div className="mt-1 text-sm text-white/60">{body}</div>
     </div>
   );
 }

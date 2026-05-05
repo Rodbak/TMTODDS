@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tmtodds
+      POSTGRES_PASSWORD: tmtodds
+      POSTGRES_DB: tmtodds
+    ports:
+      - "5432:5432"
+    volumes:
+      - tmtodds_pg:/var/lib/postgresql/data
+
+volumes:
+  tmtodds_pg:
+

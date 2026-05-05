@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,16 +18,14 @@ import {
 } from "@/lib/odds-format";
 
 export function BetslipSidebar() {
-  const [lines, setLines] = useState<BetslipLine[]>([]);
-  const [fmt, setFmt] = useState<OddsFormat>("decimal");
+  const [lines, setLines] = useState<BetslipLine[]>(() => getBetslip());
+  const [fmt, setFmt] = useState<OddsFormat>(() => getStoredOddsFormat());
 
   const refresh = useCallback(() => {
     setLines(getBetslip());
   }, []);
 
   useEffect(() => {
-    setFmt(getStoredOddsFormat());
-    refresh();
     const on = () => refresh();
     window.addEventListener("tmt-betslip", on);
     window.addEventListener("storage", on);
@@ -158,18 +157,18 @@ export function BetslipSidebar() {
       <div className="tmt-panel rounded-2xl p-4">
         <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/45">Account</div>
         <div className="mt-3 grid gap-2">
-          <a
+          <Link
             href="/login"
             className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-white/85 hover:bg-white/10"
           >
             Sign in (demo) →
-          </a>
-          <a
+          </Link>
+          <Link
             href="/account"
             className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-white/85 hover:bg-white/10"
           >
             Dashboard →
-          </a>
+          </Link>
         </div>
       </div>
     </div>

@@ -5,17 +5,48 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { addSlipToBetslip, getBetslip, type BetslipLine } from "@/lib/demo/betslip";
-import { DEMO_SLIPS, type DemoSlip, type DemoSlipTier } from "@/lib/demo/data";
-import { formatKickoffLabel, isKickoffOnCalendarDay } from "@/lib/kickoff";
+import { formatKickoffGmtLabel, isKickoffOnCalendarDay } from "@/lib/kickoff";
 import {
   formatOdds,
   getStoredOddsFormat,
   type OddsFormat,
 } from "@/lib/odds-format";
-import { getDemoSession, planByKey } from "@/lib/demo/session";
 import { SLIP_TIER_LABEL } from "@/lib/plans";
 
 type TabKey = "prematch" | "live" | "today" | "tomorrow";
+
+type SlipTier = "FREE" | "FIXED" | "CONFIRMED" | "CORRECT_SCORE";
+type SlipMatch = {
+  id: string;
+  kickoffAt: string | null;
+  league: string | null;
+  homeTeam: string;
+  awayTeam: string;
+  market: string;
+  pick: string;
+  odds: number;
+  bookmaker: string | null;
+  bestSiteUrl: string | null;
+  researchUrls: string | null;
+  resultStatus: "PENDING" | "WON" | "LOST" | "VOID";
+  finalHomeScore: number | null;
+  finalAwayScore: number | null;
+};
+
+type Slip = {
+  id: string;
+  title: string;
+  slug: string;
+  tier: SlipTier;
+  publishAt: string | null;
+  matches: SlipMatch[];
+};
+
+type ActivePlan = {
+  includesFixed: boolean;
+  includesConfirmed: boolean;
+  includesCorrectScore: boolean;
+} | null;
 
 export function SlipsBoard({
   tab,
@@ -28,30 +59,47 @@ export function SlipsBoard({
   unlockedOnly: boolean;
   league: string;
 }) {
-  const slips = DEMO_SLIPS;
+  const [slips, setSlips] = useState<Slip[]>([]);
   const tabKey: TabKey =
     tab === "live" || tab === "today" || tab === "tomorrow" ? tab : "prematch";
 
   const [betslipTick, setBetslipTick] = useState(0);
-  const [fmt, setFmt] = useState<OddsFormat>("decimal");
+  const [fmt, setFmt] = useState<OddsFormat>(() => getStoredOddsFormat());
   const [now, setNow] = useState(() => new Date());
-  const [planKey, setPlanKey] = useState<string | null>(null);
-
-  const plan = planByKey(planKey);
+  const [plan, setPlan] = useState<ActivePlan>(null);
 
   useEffect(() => {
-    const sync = () => setPlanKey(getDemoSession()?.activePlanKey ?? null);
-    sync();
-    window.addEventListener("storage", sync);
-    window.addEventListener("tmt-session", sync);
+    let cancelled = false;
+    (async () => {
+      const res = await fetch("/api/auth/me", { cache: "no-store" });
+      const data = await res.json().catch(() => null);
+      if (cancelled) return;
+      setPlan(data?.activePlan ?? null);
+    })();
     return () => {
-      window.removeEventListener("storage", sync);
-      window.removeEventListener("tmt-session", sync);
+      cancelled = true;
     };
   }, []);
 
   useEffect(() => {
-    setFmt(getStoredOddsFormat());
+    let cancelled = false;
+    (async () => {
+      const p = new URLSearchParams();
+      if (tier && tier !== "ALL") p.set("tier", tier);
+      if (league) p.set("league", league);
+      if (unlockedOnly) p.set("unlocked", "1");
+      const qs = p.toString();
+      const res = await fetch(`/api/slips${qs ? `?${qs}` : ""}`, { cache: "no-store" });
+      const data = await res.json().catch(() => null);
+      if (cancelled) return;
+      setSlips(Array.isArray(data?.slips) ? data.slips : []);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tier, league, unlockedOnly]);
+
+  useEffect(() => {
     const onOdds = () => setFmt(getStoredOddsFormat());
     const onBet = () => setBetslipTick((x) => x + 1);
     window.addEventListener("tmt-odds-format", onOdds);
@@ -95,13 +143,14 @@ export function SlipsBoard({
       if (tabKey === "live") return false;
 
       if (tabKey === "today") {
-        const pub = new Date(s.publishAt);
-        const pubToday = pub >= startOfToday && pub < startOfTomorrow;
+        const pub = s.publishAt ? new Date(s.publishAt) : null;
+        const pubToday = pub ? pub >= startOfToday && pub < startOfTomorrow : false;
         const kickToday = s.matches.some((m) =>
           m.kickoffAt ? isKickoffOnCalendarDay(m.kickoffAt, startOfToday) : false,
         );
-        const ageMs = now.getTime() - pub.getTime();
-        const pubRollingRecent = ageMs >= 0 && ageMs <= 4 * 24 * 60 * 60 * 1000;
+        const ageMs = pub ? now.getTime() - pub.getTime() : null;
+        const pubRollingRecent =
+          ageMs !== null && ageMs >= 0 && ageMs <= 4 * 24 * 60 * 60 * 1000;
         if (!pubToday && !kickToday && !pubRollingRecent) return false;
       }
 
@@ -109,8 +158,11 @@ export function SlipsBoard({
         const kickTom = s.matches.some((m) =>
           m.kickoffAt ? isKickoffOnCalendarDay(m.kickoffAt, startOfTomorrow) : false,
         );
-        const pub = new Date(s.publishAt);
-        const pubTom = pub >= startOfTomorrow && pub < new Date(startOfTomorrow.getTime() + 86400000);
+        const pub = s.publishAt ? new Date(s.publishAt) : null;
+        const pubTom = pub
+          ? pub >= startOfTomorrow &&
+            pub < new Date(startOfTomorrow.getTime() + 86400000)
+          : false;
         if (!kickTom && !pubTom) return false;
       }
 
@@ -121,7 +173,6 @@ export function SlipsBoard({
     tier,
     league,
     unlockedOnly,
-    planKey,
     tabKey,
     startOfToday,
     startOfTomorrow,
@@ -260,7 +311,6 @@ export function SlipsBoard({
                 slip={s}
                 plan={plan}
                 fmt={fmt}
-                now={now}
                 onBetslipChange={() => setBetslipTick((x) => x + 1)}
               />
             ))}
@@ -271,7 +321,7 @@ export function SlipsBoard({
               <thead className="sticky top-16 z-10 bg-[#0f1729] shadow-[inset_0_-1px_0_rgba(255,255,255,0.08)] md:top-[4.25rem]">
                 <tr className="text-left text-[10px] font-black uppercase tracking-wide text-white/45">
                   <th className="whitespace-nowrap px-3 py-2.5 md:px-4">Fixture</th>
-                  <th className="whitespace-nowrap px-3 py-2.5 md:px-4">Kickoff</th>
+                  <th className="whitespace-nowrap px-3 py-2.5 md:px-4">Date / Time</th>
                   <th className="whitespace-nowrap px-3 py-2.5 md:px-4">Selection</th>
                   <th className="whitespace-nowrap px-3 py-2.5 md:px-4">Odds</th>
                   <th className="whitespace-nowrap px-3 py-2.5 md:px-4">Book</th>
@@ -298,7 +348,7 @@ export function SlipsBoard({
                         <div className="text-[11px] text-white/45">{m?.league ?? "Accumulator"}</div>
                       </td>
                       <td className="whitespace-nowrap px-3 py-2.5 align-top text-xs text-white/60 md:px-4">
-                        {formatKickoffLabel(kick, now)}
+                        {formatKickoffGmtLabel(kick ?? undefined)}
                       </td>
                       <td className="max-w-[200px] px-3 py-2.5 align-top md:px-4">
                         {m ? (
@@ -348,7 +398,7 @@ export function SlipsBoard({
                                 title: s.title,
                                 combinedDecimal: combined,
                                 legs: Math.max(1, s.matches.length),
-                                league: m?.league,
+                                league: m?.league ?? undefined,
                               };
                               addSlipToBetslip(line);
                               setBetslipTick((x) => x + 1);
@@ -374,13 +424,11 @@ function SlipLineCard({
   slip: s,
   plan,
   fmt,
-  now,
   onBetslipChange,
 }: {
-  slip: DemoSlip;
-  plan: ReturnType<typeof planByKey>;
+  slip: Slip;
+  plan: ActivePlan;
   fmt: OddsFormat;
-  now: Date;
   onBetslipChange: () => void;
 }) {
   const m = s.matches[0];
@@ -401,7 +449,7 @@ function SlipLineCard({
         <TierBadge tier={s.tier} />
       </div>
       <div className="mt-2 flex flex-wrap gap-2 text-xs text-white/60">
-        <span>{formatKickoffLabel(kick, now)}</span>
+        <span>{formatKickoffGmtLabel(kick ?? undefined)}</span>
         <span className="text-white/35">·</span>
         <span>
           {m ? (
@@ -438,7 +486,7 @@ function SlipLineCard({
               title: s.title,
               combinedDecimal: combined,
               legs: Math.max(1, s.matches.length),
-              league: m?.league,
+              league: m?.league ?? undefined,
             });
             onBetslipChange();
           }}
@@ -450,7 +498,7 @@ function SlipLineCard({
   );
 }
 
-function combinedOdds(s: DemoSlip): number {
+function combinedOdds(s: Slip): number {
   if (!s.matches.length) return 1;
   return s.matches.reduce((acc, m) => acc * m.odds, 1);
 }
@@ -472,12 +520,12 @@ function TierBadge({ tier }: { tier: string }) {
   );
 }
 
-function allowedTier(plan: ReturnType<typeof planByKey>, tier: DemoSlipTier) {
+function allowedTier(plan: ActivePlan, tier: SlipTier) {
   if (tier === "FREE") return true;
   if (!plan) return false;
-  if (tier === "FIXED") return plan.includesFixed;
-  if (tier === "CONFIRMED") return plan.includesConfirmed;
-  if (tier === "CORRECT_SCORE") return plan.includesCorrectScore;
+  if (tier === "FIXED") return Boolean(plan.includesFixed);
+  if (tier === "CONFIRMED") return Boolean(plan.includesConfirmed);
+  if (tier === "CORRECT_SCORE") return Boolean(plan.includesCorrectScore);
   return false;
 }
 

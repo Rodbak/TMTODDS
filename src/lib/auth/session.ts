@@ -8,9 +8,7 @@ const COOKIE_NAME = "tmt_session";
 
 function getSecretKey() {
   const secret = process.env.AUTH_SECRET;
-  if (!secret) {
-    throw new Error("Missing AUTH_SECRET env var");
-  }
+  if (!secret) return null;
   return new TextEncoder().encode(secret);
 }
 
@@ -21,6 +19,7 @@ export type SessionUser = {
 
 export const createSessionToken = async (user: SessionUser) => {
   const secretKey = getSecretKey();
+  if (!secretKey) throw new Error("Missing AUTH_SECRET env var");
   return await new SignJWT({ role: user.role })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(user.userId)
@@ -46,12 +45,13 @@ export async function clearSessionCookie() {
 }
 
 export const getSession = cache(async (): Promise<SessionUser | null> => {
+  const secretKey = getSecretKey();
+  if (!secretKey) return null;
   const jar = await cookies();
   const token = jar.get(COOKIE_NAME)?.value;
   if (!token) return null;
 
   try {
-    const secretKey = getSecretKey();
     const { payload, protectedHeader } = await jwtVerify(token, secretKey, {
       algorithms: ["HS256"],
     });

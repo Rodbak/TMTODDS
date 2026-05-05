@@ -1,12 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 import { SportsbookShell } from "@/components/SportsbookShell";
 import { BetslipSidebar } from "@/components/demo/BetslipSidebar";
 import { FloatingBetslipFab } from "@/components/demo/FloatingBetslipFab";
 import { SlipsBoard } from "@/components/demo/SlipsBoard";
-import { DEMO_SLIPS } from "@/lib/demo/data";
 import { SLIP_TIER_LABEL } from "@/lib/plans";
 
 export function SlipsPageClient() {
@@ -16,6 +17,20 @@ export function SlipsPageClient() {
   const unlockedOnly = sp.get("unlocked") === "1";
   const league = sp.get("league") ?? "";
 
+  const [slips, setSlips] = useState<Slip[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const res = await fetch("/api/slips", { cache: "no-store" });
+      const data = await res.json().catch(() => null);
+      if (cancelled) return;
+      setSlips(Array.isArray(data?.slips) ? (data.slips as Slip[]) : []);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <SportsbookShell
       left={
@@ -24,6 +39,7 @@ export function SlipsPageClient() {
           tier={tier}
           league={league}
           unlockedOnly={unlockedOnly}
+          slips={slips}
         />
       }
       main={
@@ -47,26 +63,29 @@ function LeftDemoSidebar({
   tier,
   league,
   unlockedOnly,
+  slips,
 }: {
   tab: string;
   tier: string;
   league: string;
   unlockedOnly: boolean;
+  slips: Slip[];
 }) {
-  const slips = DEMO_SLIPS;
-  const tierCounts: Record<string, number> = {};
-  for (const s of slips) tierCounts[s.tier] = (tierCounts[s.tier] ?? 0) + 1;
-
-  const leagueCounts: Record<string, number> = {};
-  for (const s of slips) {
-    for (const m of s.matches) {
-      if (!m.league) continue;
-      leagueCounts[m.league] = (leagueCounts[m.league] ?? 0) + 1;
+  const { tierCounts, topLeagues } = useMemo(() => {
+    const tierCounts: Record<string, number> = {};
+    const leagueCounts: Record<string, number> = {};
+    for (const s of slips) {
+      tierCounts[s.tier] = (tierCounts[s.tier] ?? 0) + 1;
+      for (const m of s.matches ?? []) {
+        if (!m?.league) continue;
+        leagueCounts[m.league] = (leagueCounts[m.league] ?? 0) + 1;
+      }
     }
-  }
-  const topLeagues = Object.entries(leagueCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10);
+    const topLeagues = Object.entries(leagueCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10);
+    return { tierCounts, topLeagues };
+  }, [slips]);
 
   const slipHref = (overrides: { tier?: string; league?: string } = {}) => {
     const p = new URLSearchParams();
@@ -86,12 +105,12 @@ function LeftDemoSidebar({
         Sports
       </div>
       <div className="mt-3 grid gap-1.5 text-sm">
-        <a
+        <Link
           href="/"
           className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 font-semibold text-white/85 hover:bg-white/10"
         >
           Home <span className="text-white/35">→</span>
-        </a>
+        </Link>
         <span className="flex items-center justify-between rounded-lg border border-[#00e676]/35 bg-[#00e676]/10 px-3 py-2 font-black text-[#b9ffd4]">
           Football <span className="text-[#00e676]">●</span>
         </span>
@@ -102,7 +121,7 @@ function LeftDemoSidebar({
         Leagues
       </div>
       <div className="mt-2 grid max-h-[280px] gap-1 overflow-y-auto pr-0.5">
-        <a
+        <Link
           href={slipHref({ league: "" })}
           className={`flex items-center justify-between rounded-lg border px-2.5 py-2 text-xs font-semibold ${
             !league
@@ -111,9 +130,9 @@ function LeftDemoSidebar({
           }`}
         >
           All leagues
-        </a>
+        </Link>
         {topLeagues.map(([name, n]) => (
-          <a
+          <Link
             key={name}
             href={slipHref({ league: name })}
             className={`flex items-center justify-between rounded-lg border px-2.5 py-2 text-xs font-semibold ${
@@ -126,7 +145,7 @@ function LeftDemoSidebar({
             <span className="shrink-0 rounded bg-black/40 px-1.5 py-0.5 text-[10px] font-black text-white/70">
               {n}
             </span>
-          </a>
+          </Link>
         ))}
       </div>
 
@@ -136,7 +155,7 @@ function LeftDemoSidebar({
       </div>
       <div className="mt-2 grid gap-1.5">
         {(["FREE", "FIXED", "CONFIRMED", "CORRECT_SCORE"] as const).map((t) => (
-          <a
+          <Link
             key={t}
             href={slipHref({ tier: t, league })}
             className={`flex items-center justify-between rounded-lg border px-2.5 py-2 text-xs font-semibold ${
@@ -149,10 +168,19 @@ function LeftDemoSidebar({
             <span className="rounded bg-black/40 px-1.5 py-0.5 text-[10px] font-black text-white/70">
               {tierCounts[t] ?? 0}
             </span>
-          </a>
+          </Link>
         ))}
       </div>
     </div>
   );
 }
+
+type SlipMatch = {
+  league?: string | null;
+};
+
+type Slip = {
+  tier: string;
+  matches?: SlipMatch[];
+};
 

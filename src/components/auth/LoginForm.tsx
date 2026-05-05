@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
-import { demoLogin, setDemoSession } from "@/lib/demo/session";
 
 export function LoginForm() {
   const [pending, startTransition] = useTransition();
@@ -19,12 +18,16 @@ export function LoginForm() {
         e.preventDefault();
         setError(null);
         startTransition(async () => {
-          const session = demoLogin(identifier, password);
-          if (!session) {
-            setError("Invalid demo credentials");
+          const res = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ identifier, password }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            setError(data?.error ?? "Sign in failed");
             return;
           }
-          setDemoSession(session);
           window.location.href = "/account";
         });
       }}
@@ -64,7 +67,7 @@ export function LoginForm() {
       </Button>
 
       <div className="text-sm text-black/70 dark:text-white/70">
-        Demo accounts: `admin@tmtodds.com / admin12345`, `demo@tmtodds.com /
+        Default seeded accounts (change later): `admin@tmtodds.com / admin12345`, `demo@tmtodds.com /
         demo12345`.
       </div>
 

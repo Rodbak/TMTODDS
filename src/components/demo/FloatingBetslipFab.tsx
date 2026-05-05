@@ -9,7 +9,7 @@ import { formatOdds, getStoredOddsFormat, type OddsFormat } from "@/lib/odds-for
 export function FloatingBetslipFab() {
   const [open, setOpen] = useState(false);
   const [tick, setTick] = useState(0);
-  const [fmt, setFmt] = useState<OddsFormat>("decimal");
+  const [fmt, setFmt] = useState<OddsFormat>(() => getStoredOddsFormat());
 
   const refresh = useCallback(() => setTick((x) => x + 1), []);
 
@@ -24,7 +24,6 @@ export function FloatingBetslipFab() {
   }, [lines]);
 
   useEffect(() => {
-    setFmt(getStoredOddsFormat());
     const onBet = () => refresh();
     const onOdds = () => setFmt(getStoredOddsFormat());
     window.addEventListener("tmt-betslip", onBet);

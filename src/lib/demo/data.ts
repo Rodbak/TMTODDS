@@ -82,14 +82,14 @@ export const DEMO_SLIPS: DemoSlip[] = [
     slug: "prematch-free-accumulator",
     title: "Prematch — Free Accumulator (5 Picks)",
     tier: "FREE",
-    publishAt: "2026-04-28T10:00:00.000Z",
+    publishAt: "2026-05-10T09:00:00.000Z",
     bodyMd:
       "## Notes\n\n- Market mix: 1X2 / Over 1.5 / BTTS\n- Suggested stake: ₵20\n\n## Quick links\n\n- SofaScore / Flashscore links are inside each match row.\n",
     matches: [
       {
         id: "m1",
         league: "Premier League",
-        kickoffAt: "2026-04-28T18:00:00.000Z",
+        kickoffAt: "2026-05-10T15:00:00.000Z",
         homeTeam: "Arsenal",
         awayTeam: "Aston Villa",
         market: "Over 1.5",
@@ -103,7 +103,7 @@ export const DEMO_SLIPS: DemoSlip[] = [
       {
         id: "m2",
         league: "LaLiga",
-        kickoffAt: "2026-04-28T20:00:00.000Z",
+        kickoffAt: "2026-05-10T18:00:00.000Z",
         homeTeam: "Barcelona",
         awayTeam: "Sevilla",
         market: "1X2",
@@ -120,14 +120,14 @@ export const DEMO_SLIPS: DemoSlip[] = [
     slug: "confirmed-picks-midweek",
     title: "Confirmed Picks — Midweek (3 Picks)",
     tier: "CONFIRMED",
-    publishAt: "2026-04-28T12:30:00.000Z",
+    publishAt: "2026-05-11T10:30:00.000Z",
     bodyMd:
       "## Notes\n\n- Higher confidence set.\n- Suggested stake: ₵50\n",
     matches: [
       {
         id: "m3",
         league: "UEFA Champions League",
-        kickoffAt: "2026-04-28T19:00:00.000Z",
+        kickoffAt: "2026-05-11T19:00:00.000Z",
         homeTeam: "Inter",
         awayTeam: "PSG",
         market: "BTTS",
@@ -146,14 +146,14 @@ export const DEMO_SLIPS: DemoSlip[] = [
     slug: "correct-score-vault-week-1",
     title: "Correct Score Vault — Week 1 (VIP)",
     tier: "CORRECT_SCORE",
-    publishAt: "2026-04-28T14:15:00.000Z",
+    publishAt: "2026-05-12T11:15:00.000Z",
     bodyMd:
       "## Notes\n\n- Correct score picks are high risk.\n- Stake responsibly.\n",
     matches: [
       {
         id: "m4",
         league: "Serie A",
-        kickoffAt: "2026-04-28T17:45:00.000Z",
+        kickoffAt: "2026-05-12T17:45:00.000Z",
         homeTeam: "Milan",
         awayTeam: "Napoli",
         market: "Correct Score",

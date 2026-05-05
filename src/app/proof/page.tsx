@@ -1,10 +1,47 @@
 import Link from "next/link";
+import fs from "node:fs";
+import path from "node:path";
 
-import { DEMO_SLIPS } from "@/lib/demo/data";
+import { RecentResultsGallery } from "@/components/proof/RecentResultsGallery";
 import { SLIP_TIER_LABEL } from "@/lib/plans";
+import { prisma } from "@/lib/prisma";
 
-export default function ProofPage() {
-  const slips = DEMO_SLIPS;
+export const dynamic = "force-dynamic";
+
+export default async function ProofPage() {
+  const proofDir = path.join(process.cwd(), "public", "assets", "images", "proof");
+  let proofImages: Array<{ src: string; alt: string }> = [];
+  try {
+    const files = fs
+      .readdirSync(proofDir, { withFileTypes: true })
+      .filter((d) => d.isFile())
+      .map((d) => d.name)
+      .filter((name) => /\.(png|jpe?g|webp|gif)$/i.test(name))
+      .sort((a, b) => a.localeCompare(b));
+    proofImages = files.map((name) => ({
+      src: `/assets/images/proof/${encodeURIComponent(name)}`,
+      alt: "Settled slip screenshot",
+    }));
+  } catch {
+    proofImages = [];
+  }
+
+  const slips = (await prisma.slip.findMany({
+    where: { status: "PUBLISHED" },
+    orderBy: { publishAt: "desc" },
+    include: { matches: true },
+    take: 200,
+  })) as Array<{
+    id: string;
+    title: string;
+    slug: string;
+    tier: string;
+    publishAt: Date | null;
+    matches: Array<{
+      id: string;
+      resultStatus: "PENDING" | "WON" | "LOST" | "VOID";
+    }>;
+  }>;
 
   let totalLegs = 0;
   let wonLegs = 0;
@@ -40,6 +77,21 @@ export default function ProofPage() {
           hint={settled ? `${settled} legs settled` : "No settled legs yet"}
         />
       </div>
+
+      <section className="mt-10">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/45">Gallery</p>
+            <h2 className="mt-2 text-xl font-black tracking-tight text-white md:text-2xl">Recent Results</h2>
+            <p className="mt-2 max-w-2xl text-sm text-white/55">
+              Screenshots of settled slips. Updated after every matchday.
+            </p>
+          </div>
+        </div>
+        <div className="mt-5">
+          <RecentResultsGallery images={proofImages} />
+        </div>
+      </section>
 
       <div className="mt-8 overflow-hidden rounded-2xl border border-white/10">
         <div className="border-b border-white/10 bg-black/30 px-4 py-3 md:px-5">

@@ -1,15 +1,10 @@
 import type { NextConfig } from "next";
 
-const repo = "TMTODDS";
-
 const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
-  output: "export",
-  trailingSlash: true,
-  basePath: `/${repo}`,
-  assetPrefix: `/${repo}/`,
+  // SaaS mode: deploy as a server app (Vercel/Render) with API routes + DB.
   images: {
     unoptimized: true,
   },

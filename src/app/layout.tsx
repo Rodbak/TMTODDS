@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Backdrop } from "@/components/Backdrop";
@@ -33,15 +34,21 @@ export default function RootLayout({
               <span className="text-xs text-white/45">Gambling can be addictive. Play responsibly.</span>
             </div>
             <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-[#7dd3fc]">
-              <a className="hover:underline" href="/slips">
+              <Link className="hover:underline" href="/slips">
                 Slips board
-              </a>
-              <a className="hover:underline" href="/proof">
+              </Link>
+              <Link className="hover:underline" href="/proof">
                 Proof & results
-              </a>
-              <span className="text-white/35">Terms (coming soon)</span>
-              <span className="text-white/35">Privacy (coming soon)</span>
-              <span className="text-white/35">Responsible gambling</span>
+              </Link>
+              <Link className="hover:underline" href="/terms">
+                Terms
+              </Link>
+              <Link className="hover:underline" href="/privacy">
+                Privacy
+              </Link>
+              <Link className="hover:underline" href="/responsible-gambling">
+                Responsible gambling
+              </Link>
             </div>
             <div className="text-xs font-bold uppercase tracking-[0.16em] text-white/40">TMTODDS</div>
             <p>

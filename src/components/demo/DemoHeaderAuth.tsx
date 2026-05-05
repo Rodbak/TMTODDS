@@ -6,22 +6,26 @@ import { Button } from "@/components/ui/button";
 import { clearDemoSession, getDemoSession } from "@/lib/demo/session";
 
 export function DemoHeaderAuth() {
-  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
-  const [role, setRole] = useState<"USER" | "ADMIN" | null>(null);
+  const initial = (() => {
+    const s = getDemoSession();
+    return { email: s?.user.email ?? null, role: s?.user.role ?? null };
+  })();
+  const [sessionEmail, setSessionEmail] = useState<string | null>(initial.email);
+  const [role, setRole] = useState<"USER" | "ADMIN" | null>(initial.role);
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
-    const s = getDemoSession();
-    setSessionEmail(s?.user.email ?? null);
-    setRole(s?.user.role ?? null);
-
-    const onStorage = () => {
-      const s2 = getDemoSession();
-      setSessionEmail(s2?.user.email ?? null);
-      setRole(s2?.user.role ?? null);
+    const refresh = () => {
+      const s = getDemoSession();
+      setSessionEmail(s?.user.email ?? null);
+      setRole(s?.user.role ?? null);
     };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    window.addEventListener("storage", refresh);
+    window.addEventListener("tmt-session", refresh as EventListener);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener("tmt-session", refresh as EventListener);
+    };
   }, []);
 
   if (!sessionEmail) {

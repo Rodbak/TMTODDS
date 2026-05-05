@@ -8,9 +8,6 @@ export async function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-[#0a101c]/90 backdrop-blur-xl">
       <div className="mx-auto flex h-[3.75rem] max-w-[1280px] items-center justify-between gap-3 px-4 md:h-16 md:px-5">
         <Link href="/" className="group flex shrink-0 items-center gap-2.5">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#00e676] to-[#00c853] text-xs font-black text-[#041208] shadow-[0_0_20px_rgba(0,230,118,0.25)]">
-            TMT
-          </span>
           <span className="text-[15px] font-black tracking-tight text-white md:text-base">
             TMTODDS
           </span>

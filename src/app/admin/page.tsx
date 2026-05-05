@@ -1,11 +1,21 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+
+import { requireAdmin } from "@/lib/auth/session";
 
 export default function AdminHome() {
+  return <AdminHomeServer />;
+}
+
+async function AdminHomeServer() {
+  const admin = await requireAdmin();
+  if (!admin) redirect("/login");
+
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-12">
-      <h1 className="text-2xl font-black tracking-tight text-white">Admin (Demo)</h1>
+      <h1 className="text-2xl font-black tracking-tight text-white">Admin</h1>
       <p className="mt-2 text-sm text-white/70">
-        Frontend-only demo admin screens.
+        Manage slips, publishing, and results.
       </p>
 
       <div className="mt-6 grid gap-3">

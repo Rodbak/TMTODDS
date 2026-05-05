@@ -1,22 +1,24 @@
-import { Button } from "@/components/ui/button";
+import { redirect } from "next/navigation";
+
+import { AdminSlipEditor } from "@/components/admin/AdminSlipEditor";
+import { requireAdmin } from "@/lib/auth/session";
 
 export default function NewSlipPage() {
+  return <NewSlipPageServer />;
+}
+
+async function NewSlipPageServer() {
+  const admin = await requireAdmin();
+  if (!admin) redirect("/login");
+
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-12">
       <h1 className="text-2xl font-black tracking-tight text-white">New slip</h1>
       <p className="mt-2 text-sm text-white/70">
-        Demo mode: editing is disabled in frontend-only preview.
+        Create a slip and publish it to the board.
       </p>
-      <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
-        <div className="text-sm text-white/80">
-          Use this as a showcase screen for prospects. We can re-enable full
-          admin authoring once backend APIs are turned back on.
-        </div>
-        <div className="mt-4">
-          <Button as="link" href="/admin/slips" variant="secondary">
-            Back to slips
-          </Button>
-        </div>
+      <div className="mt-6">
+        <AdminSlipEditor />
       </div>
     </main>
   );

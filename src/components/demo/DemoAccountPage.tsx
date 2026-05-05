@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DEMO_SLIPS } from "@/lib/demo/data";
@@ -19,19 +19,16 @@ import {
 import { SLIP_TIER_LABEL } from "@/lib/plans";
 
 export function DemoAccountPage() {
-  const [session, setSession] = useState<DemoSession | null>(null);
-  const [pending, startTransition] = useTransition();
-
-  useEffect(() => {
+  const [session] = useState<DemoSession | null>(() => {
     const s = getDemoSession();
     if (s?.activePlanKey && !s.subscriptionStartedAt) {
       const next = { ...s, subscriptionStartedAt: new Date().toISOString() };
       setDemoSession(next);
-      setSession(next);
-      return;
+      return next;
     }
-    setSession(s);
-  }, []);
+    return s;
+  });
+  const [pending, startTransition] = useTransition();
 
   const activePlan = useMemo(
     () => planByKey(session?.activePlanKey ?? null),
@@ -43,11 +40,11 @@ export function DemoAccountPage() {
     [session, activePlan],
   );
 
-  const startedAt = useMemo(() => {
+  const startedAt = (() => {
     if (!session?.subscriptionStartedAt) return null;
     const d = new Date(session.subscriptionStartedAt);
     return Number.isNaN(d.getTime()) ? null : d;
-  }, [session?.subscriptionStartedAt]);
+  })();
 
   const daysLeft = endsAt ? demoDaysRemaining(endsAt) : 0;
   const progress =

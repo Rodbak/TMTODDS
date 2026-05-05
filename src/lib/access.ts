@@ -1,10 +1,21 @@
-import type { Plan, SlipTier, Subscription } from "@prisma/client";
+export type SlipTier = "FREE" | "FIXED" | "CONFIRMED" | "CORRECT_SCORE";
 
-export function subscriptionActive(sub: Subscription) {
+export type SubscriptionLike = {
+  status: "ACTIVE" | "EXPIRED" | "CANCELLED";
+  endsAt: Date;
+};
+
+export type PlanLike = {
+  includesFixed: boolean;
+  includesConfirmed: boolean;
+  includesCorrectScore: boolean;
+};
+
+export function subscriptionActive(sub: SubscriptionLike) {
   return sub.status === "ACTIVE" && sub.endsAt.getTime() > Date.now();
 }
 
-export function planAllowsTier(plan: Plan, tier: SlipTier) {
+export function planAllowsTier(plan: PlanLike, tier: SlipTier) {
   if (tier === "FREE") return true;
   if (tier === "FIXED") return plan.includesFixed;
   if (tier === "CONFIRMED") return plan.includesConfirmed;
