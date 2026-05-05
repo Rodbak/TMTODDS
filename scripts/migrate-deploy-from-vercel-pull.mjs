@@ -44,7 +44,6 @@ if (!process.env.DATABASE_URL) {
 
 const result = spawnSync("npx", ["prisma", "migrate", "deploy"], {
   stdio: "inherit",
-  shell: true,
   env: process.env,
 });
 
