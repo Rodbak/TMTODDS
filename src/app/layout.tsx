@@ -58,6 +58,18 @@ export default function RootLayout({
             <p className="text-xs text-white/50">
               © {new Date().getFullYear()} TMTODDS. All rights reserved.
             </p>
+            <p className="text-xs text-white/45">
+              Built by{" "}
+              <a
+                className="font-semibold text-[#7dd3fc] hover:underline"
+                href="https://strategylab.com"
+                target="_blank"
+                rel="noreferrer"
+              >
+                StrategyLab
+              </a>
+              .
+            </p>
           </div>
         </footer>
       </body>
