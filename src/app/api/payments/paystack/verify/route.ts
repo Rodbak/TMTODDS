@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/session";
 import { paystackVerify } from "@/lib/paystack";
@@ -54,7 +55,7 @@ export async function GET(req: Request) {
   await prisma.payment.update({
     where: { reference },
     // rawJson is now a native Json column — pass the object directly, no JSON.stringify
-    data:  { status: paid ? "SUCCESS" : "FAILED", rawJson: ver.raw ?? {} },
+    data:  { status: paid ? "SUCCESS" : "FAILED", rawJson: (ver.raw ?? Prisma.JsonNull) as Prisma.InputJsonValue },
   });
 
   if (paid) await activateSubscription(payment.userId, payment.planId);

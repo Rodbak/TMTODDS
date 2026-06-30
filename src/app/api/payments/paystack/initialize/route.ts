@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/session";
 import { paystackInitialize } from "@/lib/paystack";
 
-function makeReference() {
-  // Paystack reference must be unique; keep it URL-safe
-  return `tmt_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+/**
+ * Cryptographically secure payment reference.
+ * Math.random() was replaced with crypto.randomUUID() to prevent
+ * reference collisions and guessability.
+ */
+function makeReference(): string {
+  const uid = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+  return `tmt_${Date.now()}_${uid}`;
 }
 
 export async function POST(req: Request) {
@@ -28,16 +34,15 @@ export async function POST(req: Request) {
   if (!plan) return NextResponse.json({ error: "Unknown plan" }, { status: 404 });
 
   const reference = makeReference();
-  const amount = plan.priceGhs;
 
   await prisma.payment.create({
     data: {
-      provider: "PAYSTACK",
-      status: "PENDING",
-      userId: user.id,
-      planId: plan.id,
-      amount,
-      currency: "GHS",
+      provider:  "PAYSTACK",
+      status:    "PENDING",
+      userId:    user.id,
+      planId:    plan.id,
+      amount:    plan.priceGhs,
+      currency:  "GHS",
       reference,
     },
   });
@@ -47,7 +52,7 @@ export async function POST(req: Request) {
 
   const init = await paystackInitialize({
     email,
-    amountPesewas: amount * 100,
+    amountPesewas: plan.priceGhs * 100,
     reference,
     callbackUrl,
     metadata: { planKey, userId: user.id },
@@ -56,16 +61,15 @@ export async function POST(req: Request) {
   if (!init.ok) {
     await prisma.payment.update({
       where: { reference },
-      data: { status: "FAILED", rawJson: JSON.stringify(init.raw ?? {}) },
+      data: { status: "FAILED", rawJson: (init.raw ?? Prisma.JsonNull) as Prisma.InputJsonValue },
     });
     return NextResponse.json({ error: init.error }, { status: 502 });
   }
 
   await prisma.payment.update({
     where: { reference },
-    data: { rawJson: JSON.stringify(init.raw ?? {}) },
+    data: { rawJson: (init.raw ?? Prisma.JsonNull) as Prisma.InputJsonValue },
   });
 
   return NextResponse.json({ authorizationUrl: init.authorizationUrl, reference });
 }
-

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { paystackVerify, verifyPaystackWebhookSignature } from "@/lib/paystack";
 
@@ -71,7 +72,7 @@ export async function POST(req: Request) {
     await prisma.payment.update({
       where: { reference },
       // rawJson is now a native Json column — pass object directly
-      data: { rawJson: payload as object },
+      data: { rawJson: payload as Prisma.InputJsonValue },
     });
     return new NextResponse("ok", { status: 200 });
   }
@@ -85,7 +86,7 @@ export async function POST(req: Request) {
   const paid = ver.raw?.data?.status === "success";
   await prisma.payment.update({
     where: { reference },
-    data: { status: paid ? "SUCCESS" : "FAILED", rawJson: ver.raw ?? {} },
+    data: { status: paid ? "SUCCESS" : "FAILED", rawJson: (ver.raw ?? Prisma.JsonNull) as Prisma.InputJsonValue },
   });
 
   if (paid) {

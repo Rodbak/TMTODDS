@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth/session";
 
@@ -17,20 +18,28 @@ function slugify(input: string) {
 }
 
 /**
- * Normalise whatever the admin UI sends for researchUrls into a plain
- * string[] ready for Prisma's Json field.
+ * Normalise whatever the admin UI sends for researchUrls into a value
+ * Prisma accepts for a nullable Json column.
+ *
+ * Prisma requires Prisma.JsonNull (not plain null) when you want to
+ * store SQL NULL in a Json? field — passing a bare null is a type error.
  *
  * Accepts:
- *   - string[]         → pass through
- *   - comma-separated  → split and trim
- *   - null / undefined → null
+ *   - string[]         → pass through as InputJsonValue
+ *   - comma-separated  → split and trim into string[]
+ *   - null / undefined → Prisma.JsonNull  (writes SQL NULL)
  */
-function parseResearchUrls(raw: unknown): string[] | { _null: true } {
-  if (Array.isArray(raw)) return (raw as unknown[]).map(String).filter(Boolean);
+function parseResearchUrls(
+  raw: unknown,
+): Prisma.NullableJsonNullValueInput | Prisma.InputJsonValue {
+  if (Array.isArray(raw)) {
+    const urls = (raw as unknown[]).map(String).filter(Boolean);
+    return urls.length ? urls : Prisma.JsonNull;
+  }
   if (typeof raw === "string" && raw.trim()) {
     return raw.split(",").map((u) => u.trim()).filter(Boolean);
   }
-  return { _null: true };
+  return Prisma.JsonNull;
 }
 
 export async function POST(req: Request) {
