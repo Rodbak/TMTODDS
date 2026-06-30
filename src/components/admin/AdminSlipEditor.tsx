@@ -17,7 +17,7 @@ type MatchRow = {
   odds: number;
   bookmaker?: string;
   bestSiteUrl?: string;
-  researchUrls?: string; // comma-separated
+  researchUrls?: string; // comma-separated in the form; parseUrls() converts to string[] before POST
 };
 
 export function AdminSlipEditor() {

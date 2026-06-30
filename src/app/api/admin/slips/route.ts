@@ -16,16 +16,33 @@ function slugify(input: string) {
     .slice(0, 80);
 }
 
+/**
+ * Normalise whatever the admin UI sends for researchUrls into a plain
+ * string[] ready for Prisma's Json field.
+ *
+ * Accepts:
+ *   - string[]         → pass through
+ *   - comma-separated  → split and trim
+ *   - null / undefined → null
+ */
+function parseResearchUrls(raw: unknown): string[] | null {
+  if (Array.isArray(raw)) return (raw as unknown[]).map(String).filter(Boolean);
+  if (typeof raw === "string" && raw.trim()) {
+    return raw.split(",").map((u) => u.trim()).filter(Boolean);
+  }
+  return null;
+}
+
 export async function POST(req: Request) {
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await req.json().catch(() => null);
-  const title = typeof body?.title === "string" ? body.title.trim() : "";
-  const tier = typeof body?.tier === "string" ? body.tier : "FREE";
-  const bodyMd = typeof body?.bodyMd === "string" ? body.bodyMd : "";
+  const body      = await req.json().catch(() => null);
+  const title     = typeof body?.title   === "string" ? body.title.trim()  : "";
+  const tier      = typeof body?.tier    === "string" ? body.tier           : "FREE";
+  const bodyMd    = typeof body?.bodyMd  === "string" ? body.bodyMd         : "";
   const publishNow = Boolean(body?.publishNow);
-  const matches = Array.isArray(body?.matches) ? (body.matches as unknown[]) : [];
+  const matches   = Array.isArray(body?.matches) ? (body.matches as unknown[]) : [];
 
   if (!title || !bodyMd) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
@@ -42,28 +59,25 @@ export async function POST(req: Request) {
       title,
       slug,
       tier,
-      status: publishNow ? "PUBLISHED" : "DRAFT",
-      publishAt: publishNow ? new Date() : null,
+      status:    publishNow ? "PUBLISHED" : "DRAFT",
+      publishAt: publishNow ? new Date()  : null,
       bodyMd,
       createdById: admin.userId,
       matches: {
         create: matches
           .filter(isRecord)
           .map((m) => ({
-            kickoffAt: typeof m.kickoffAt === "string" ? new Date(m.kickoffAt) : null,
-            league: typeof m.league === "string" ? m.league : null,
-            homeTeam: typeof m.homeTeam === "string" ? m.homeTeam : String(m.homeTeam ?? ""),
-            awayTeam: typeof m.awayTeam === "string" ? m.awayTeam : String(m.awayTeam ?? ""),
-            market: typeof m.market === "string" ? m.market : String(m.market ?? ""),
-            pick: typeof m.pick === "string" ? m.pick : String(m.pick ?? ""),
-            odds: Number(m.odds ?? 1),
-            bookmaker: typeof m.bookmaker === "string" ? m.bookmaker : null,
-            bestSiteUrl: typeof m.bestSiteUrl === "string" ? m.bestSiteUrl : null,
-            researchUrls: Array.isArray(m.researchUrls)
-              ? JSON.stringify(m.researchUrls)
-              : typeof m.researchUrls === "string"
-                ? m.researchUrls
-                : null,
+            kickoffAt:    typeof m.kickoffAt  === "string" ? new Date(m.kickoffAt) : null,
+            league:       typeof m.league     === "string" ? m.league     : null,
+            homeTeam:     typeof m.homeTeam   === "string" ? m.homeTeam   : String(m.homeTeam ?? ""),
+            awayTeam:     typeof m.awayTeam   === "string" ? m.awayTeam   : String(m.awayTeam ?? ""),
+            market:       typeof m.market     === "string" ? m.market     : String(m.market ?? ""),
+            pick:         typeof m.pick       === "string" ? m.pick       : String(m.pick ?? ""),
+            odds:         Number(m.odds ?? 1),
+            bookmaker:    typeof m.bookmaker  === "string" ? m.bookmaker  : null,
+            bestSiteUrl:  typeof m.bestSiteUrl === "string" ? m.bestSiteUrl : null,
+            // Now a native Json column — no JSON.stringify needed
+            researchUrls: parseResearchUrls(m.researchUrls),
           })),
       },
     },
@@ -81,26 +95,17 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
     include: { matches: true },
     take: 200,
-  }) as Array<{
-    id: string;
-    title: string;
-    slug: string;
-    tier: string;
-    status: string;
-    publishAt: Date | null;
-    matches: Array<{ id: string }>;
-  }>;
+  });
 
   return NextResponse.json({
     slips: slips.map((s) => ({
-      id: s.id,
-      title: s.title,
-      slug: s.slug,
-      tier: s.tier,
-      status: s.status,
+      id:        s.id,
+      title:     s.title,
+      slug:      s.slug,
+      tier:      s.tier,
+      status:    s.status,
       publishAt: s.publishAt,
-      matches: s.matches.length,
+      matches:   s.matches.length,
     })),
   });
 }
-

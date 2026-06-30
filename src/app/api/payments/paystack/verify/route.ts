@@ -8,31 +8,23 @@ async function activateSubscription(userId: string, planId: string) {
   const plan = await prisma.plan.findUnique({ where: { id: planId } });
   if (!plan) return;
 
-  const now = new Date();
+  const now    = new Date();
   const active = await prisma.subscription.findFirst({
     where: { userId, status: "ACTIVE" },
     orderBy: { endsAt: "desc" },
-    include: { plan: true },
   });
 
-  // If current active is still valid, extend from its end; else start now.
-  const base = active && active.endsAt.getTime() > now.getTime() ? active.endsAt : now;
+  const base   = active && active.endsAt.getTime() > now.getTime() ? active.endsAt : now;
   const endsAt = new Date(base);
   endsAt.setDate(endsAt.getDate() + plan.durationDays);
 
   await prisma.subscription.updateMany({
     where: { userId, status: "ACTIVE" },
-    data: { status: "EXPIRED" },
+    data:  { status: "EXPIRED" },
   });
 
   await prisma.subscription.create({
-    data: {
-      userId,
-      planId,
-      startsAt: now,
-      endsAt,
-      status: "ACTIVE",
-    },
+    data: { userId, planId, startsAt: now, endsAt, status: "ACTIVE" },
   });
 }
 
@@ -40,7 +32,7 @@ export async function GET(req: Request) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const url = new URL(req.url);
+  const url       = new URL(req.url);
   const reference = url.searchParams.get("reference");
   if (!reference) return NextResponse.json({ error: "Missing reference" }, { status: 400 });
 
@@ -58,15 +50,14 @@ export async function GET(req: Request) {
   if (!ver.ok) return NextResponse.json({ paid: false, error: ver.error }, { status: 502 });
 
   const paid = ver.raw?.data?.status === "success";
+
   await prisma.payment.update({
     where: { reference },
-    data: { status: paid ? "SUCCESS" : "FAILED", rawJson: JSON.stringify(ver.raw ?? {}) },
+    // rawJson is now a native Json column — pass the object directly, no JSON.stringify
+    data:  { status: paid ? "SUCCESS" : "FAILED", rawJson: ver.raw ?? {} },
   });
 
-  if (paid) {
-    await activateSubscription(payment.userId, payment.planId);
-  }
+  if (paid) await activateSubscription(payment.userId, payment.planId);
 
   return NextResponse.json({ paid });
 }
-

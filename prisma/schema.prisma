@@ -149,7 +149,7 @@ model SlipMatch {
 
   bookmaker     String?
   bestSiteUrl   String?
-  researchUrls  String? // JSON string of helpful links (SofaScore, Flashscore, etc.)
+  researchUrls  Json?   // Array of helpful research links (SofaScore, Flashscore, etc.)
   externalFixtureId String?
 
   resultStatus   MatchResultStatus @default(PENDING)
@@ -175,7 +175,7 @@ model Payment {
   currency String @default("GHS")
   reference String @unique
 
-  rawJson String?
+  rawJson Json?   // Full Paystack response payload
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   plan Plan @relation(fields: [planId], references: [id], onDelete: Restrict)

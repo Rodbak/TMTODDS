@@ -70,7 +70,8 @@ export async function POST(req: Request) {
   if (event !== "charge.success") {
     await prisma.payment.update({
       where: { reference },
-      data: { rawJson: JSON.stringify(payload) },
+      // rawJson is now a native Json column — pass object directly
+      data: { rawJson: payload as object },
     });
     return new NextResponse("ok", { status: 200 });
   }
@@ -84,7 +85,7 @@ export async function POST(req: Request) {
   const paid = ver.raw?.data?.status === "success";
   await prisma.payment.update({
     where: { reference },
-    data: { status: paid ? "SUCCESS" : "FAILED", rawJson: JSON.stringify(ver.raw ?? {}) },
+    data: { status: paid ? "SUCCESS" : "FAILED", rawJson: ver.raw ?? {} },
   });
 
   if (paid) {

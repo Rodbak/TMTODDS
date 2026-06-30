@@ -27,7 +27,7 @@ type SlipMatch = {
   odds: number;
   bookmaker: string | null;
   bestSiteUrl: string | null;
-  researchUrls: string | null;
+  researchUrls: string[] | null; // Json column — Prisma returns parsed array
   resultStatus: "PENDING" | "WON" | "LOST" | "VOID";
   finalHomeScore: number | null;
   finalAwayScore: number | null;
