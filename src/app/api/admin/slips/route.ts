@@ -25,12 +25,12 @@ function slugify(input: string) {
  *   - comma-separated  → split and trim
  *   - null / undefined → null
  */
-function parseResearchUrls(raw: unknown): string[] | null {
+function parseResearchUrls(raw: unknown): string[] | { _null: true } {
   if (Array.isArray(raw)) return (raw as unknown[]).map(String).filter(Boolean);
   if (typeof raw === "string" && raw.trim()) {
     return raw.split(",").map((u) => u.trim()).filter(Boolean);
   }
-  return null;
+  return { _null: true };
 }
 
 export async function POST(req: Request) {
